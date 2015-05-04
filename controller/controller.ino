@@ -1,13 +1,9 @@
 /*
-  LiquidCrystal Library - Hello World
+  TED Controller
 
- Demonstrates the use a 16x2 LCD display.  The LiquidCrystal
- library works with all LCD displays that are compatible with the
- Hitachi HD44780 driver. There are many of them out there, and you
- can usually tell them by the 16-pin interface.
-
- This sketch prints "Hello World!" to the LCD
- and shows the time.
+  Mediates interactions between the customer, the backend payment system, and
+  the battery. Customers create accounts and then authenticate them here on
+  the controller.
 
   The circuit:
  * LCD RS pin to digital pin 7
@@ -23,18 +19,6 @@
  * ends to +5V and ground
  * wiper to LCD VO pin (pin 3)
 
- Library originally added 18 Apr 2008
- by David A. Mellis
- library modified 5 Jul 2009
- by Limor Fried (http://www.ladyada.net)
- example added 9 Jul 2009
- by Tom Igoe
- modified 22 Nov 2010
- by Tom Igoe
-
- This example code is in the public domain.
-
- http://www.arduino.cc/en/Tutorial/LiquidCrystal
  */
 
 // include the library code:
@@ -77,22 +61,19 @@ HashMap<char*, char*> hashMap = HashMap<char*, char*>(hashRawArray, HASH_SIZE);
 /*************************************************************************
  * Miscellaneous */
 // The input buffer.
-int buffer_index;
+int buffer_index = 0;
 char buffer[1000];
 
 // The current account being authenticated.
-bool has_account;
+bool has_account = false;
 char account_number[1000];
 
 void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
+
   // Print a message to the LCD.
   welcome();
-  
-  // Initialize the buffer;
-  buffer_index = 0;
-  has_account = false;
 
   // seed some accounts.
   hashMap[0](4256149938, 1234);
@@ -185,5 +166,3 @@ void welcome() {
   lcd.home();
   lcd.print("Account Number:");
 }
-
-
