@@ -67,9 +67,16 @@ LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
 
 /*************************************************************************
  * Account globals */
+// The number of accounts to store.
 const byte HASH_SIZE = 10;
+// Storage: where the accounts will live in memory.
 HashType<int,int> hashRawArray[HASH_SIZE];
+// Handles the storage [search, retrieve, insert]
 HashMap<int,int> hashMap = HashMap<int,int>(hashRawArray , HASH_SIZE);
+
+/*************************************************************************
+ * Miscellaneous */
+// The size of the input buffer
 char buffer[1000];
 
 void setup() {
@@ -93,8 +100,9 @@ void loop() {
   char key = keypad.getKey();
 
   if (key) {
+    // This marks the end of user input.
     if (key == '#') {
-      
+
     } else {
       lcd.print(key);
       col++;
