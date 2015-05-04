@@ -38,23 +38,67 @@
  */
 
 // include the library code:
+#include "Arduino.h"
+#include "Keypad.h"
+#include <HashMap.h>
 #include <LiquidCrystal.h>
+
+/*************************************************************************
+ * Keypad globals */
+const byte ROWS = 4;
+const byte COLS = 3;
+char keys[ROWS][COLS] = {
+  {'1', '2', '3'},
+  {'4', '5', '6'},
+  {'7', '8', '9'},
+  {'*', '0', '#'}
+};
+
+byte rowPins[ROWS] = {13, 6, 5, 4}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {3, 2, 1}; //connect to the column pinouts of the keypad
+
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+
+int col = 0;
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+
+
+/*************************************************************************
+ * Account globals */
+const byte HASH_SIZE = 10;
+HashType<int,int> hashRawArray[HASH_SIZE];
+HashMap<int,int> hashMap = HashMap<int,int>(hashRawArray , HASH_SIZE);
+char buffer[1000];
 
 void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   // Print a message to the LCD.
   lcd.print("hello, world!");
+  
+  // seed some accounts.
+  hashMap[0](4256149938, 1234);
+  hashMap[1](3107289332, 0000);
 }
 
 void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
-  lcd.setCursor(0, 1);
+  lcd.setCursor(col, 1);
   // print the number of seconds since reset:
-  lcd.print(millis() / 1000);
-}
+  //lcd.print(millis() / 1000);
 
+  char key = keypad.getKey();
+
+  if (key) {
+    if (key == '#') {
+      
+    } else {
+      lcd.print(key);
+      col++;
+      col %= 16;
+    }
+  }
+}
