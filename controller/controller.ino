@@ -70,21 +70,30 @@ LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
 // The number of accounts to store.
 const byte HASH_SIZE = 10;
 // Storage: where the accounts will live in memory.
-HashType<int,int> hashRawArray[HASH_SIZE];
+HashType<char*, char*> hashRawArray[HASH_SIZE];
 // Handles the storage [search, retrieve, insert]
-HashMap<int,int> hashMap = HashMap<int,int>(hashRawArray , HASH_SIZE);
+HashMap<char*, char*> hashMap = HashMap<char*, char*>(hashRawArray, HASH_SIZE);
 
 /*************************************************************************
  * Miscellaneous */
-// The size of the input buffer
+// The input buffer.
+int buffer_index;
 char buffer[1000];
+
+// The current account being authenticated.
+bool has_account;
+char account_number[1000];
 
 void setup() {
   // set up the LCD's number of columns and rows:
   lcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("hello, world!");
+  welcome();
   
+  // Initialize the buffer;
+  buffer_index = 0;
+  has_account = false;
+
   // seed some accounts.
   hashMap[0](4256149938, 1234);
   hashMap[1](3107289332, 0000);
@@ -92,21 +101,73 @@ void setup() {
 
 void loop() {
   // set the cursor to column 0, line 1
-  // (note: line 1 is the second row, since counting begins with 0):
+  // (note: line 1 is the second row, since counting begins with 0)
   lcd.setCursor(col, 1);
-  // print the number of seconds since reset:
-  //lcd.print(millis() / 1000);
 
   char key = keypad.getKey();
 
-  if (key) {
-    // This marks the end of user input.
-    if (key == '#') {
-
+  // Could not read key.
+  if (!key) return;
+  
+  // This marks the end of user input.
+  if (key == '#') {
+    if (!has_account) {
+      // We need to verify that the account exists.
+      if (hashMap.getValueOf(buffer) == NULL) {
+        // Print error message.
+        lcd.clear();
+        lcd.print("Incorrect account number, please try again");
+        delay(1000);
+        lcd.clear();
+        lcd.print("Account Number:");
+        
+        // Clear the buffer.
+        memset(buffer, 0, sizeof(buffer));
+        col = 0;
+        return;
+      }
+      lcd.clear();
+      lcd.print("Success! Found account.");
+      has_account = true;
+      
+      // Copy buffer into account and clear the buffer.
+      strncpy(buffer, account_number, buffer_index);
+      memset(buffer, 0, sizeof(buffer);
+      
+      // Reset and print new instructions
+      lcd.print("Enter your password now:");
+      col = 0;
     } else {
-      lcd.print(key);
-      col++;
-      col %= 16;
+      // We need to verify
     }
   }
+  
+  // Still entering input.
+  if (has_account) {
+    // Hide password.
+    lcd.print("#");
+  } else {
+    lcd.print(key);
+  }
+  col++;
+  // Wrap the screen when the user enters more than 16 characters.
+  col %= 16;
+  
+  // Add character to the buffer.
+  buffer[buffer_index] = key;
+  buffer_index++;
 }
+
+void welcome() {
+  lcd.clear();
+  lcd.home();
+  lcd.print("Welcome to TED!");
+  lcd.setCursor(0, 1);
+  lcd.print("Have an account? Enter your cell phone number now:");
+  delay(1500);
+  lcd.clear();
+  lcd.home();
+  lcd.print("Account Number:");
+}
+
+
