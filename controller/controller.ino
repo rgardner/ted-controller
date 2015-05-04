@@ -120,7 +120,7 @@ void loop() {
         delay(1000);
         lcd.clear();
         lcd.print("Account Number:");
-        
+
         // Clear the buffer.
         memset(buffer, 0, sizeof(buffer));
         col = 0;
@@ -129,16 +129,32 @@ void loop() {
       lcd.clear();
       lcd.print("Success! Found account.");
       has_account = true;
-      
+
       // Copy buffer into account and clear the buffer.
       strncpy(buffer, account_number, buffer_index);
       memset(buffer, 0, sizeof(buffer);
-      
+
       // Reset and print new instructions
       lcd.print("Enter your password now:");
       col = 0;
     } else {
-      // We need to verify
+      // Check to see if this password is in the system.
+      char *password = hashMap.getValueOf(account_number);
+      if (!strncmp(buffer, password, buffer_index)) {
+        lcd.clear();
+        lcd.print("Incorrect password!");
+        lcd.setCursor(0, 1);
+        lcd.print("Please try again");
+        memset(buffer, 0, sizeof(buffer));
+        col = 0;
+        return; 
+      }
+      lcd.clear();
+      lcd.home();
+      lcd.print("Success!");
+      // TODO(rgardner): enter in payment information code.
+      //   It will cost you $X to charge your phone for X
+      }
     }
   }
   
@@ -152,7 +168,7 @@ void loop() {
   col++;
   // Wrap the screen when the user enters more than 16 characters.
   col %= 16;
-  
+
   // Add character to the buffer.
   buffer[buffer_index] = key;
   buffer_index++;
@@ -163,7 +179,7 @@ void welcome() {
   lcd.home();
   lcd.print("Welcome to TED!");
   lcd.setCursor(0, 1);
-  lcd.print("Have an account? Enter your cell phone number now:");
+  lcd.print("Have an account? Enter your cell phone number now.");
   delay(1500);
   lcd.clear();
   lcd.home();
