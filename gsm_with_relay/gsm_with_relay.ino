@@ -79,12 +79,12 @@ void parseBuffer() {
 
 void startPoweringPhone(int seconds) {
   int i = 0;
-  for ( ; i <= NUM_RELAYS; i++) {
-    if (i == NUM_RELAYS) {
-      // ERROR, NO OPEN INPUT FOUND
-      return;
-    }
+  for ( ; i < NUM_RELAYS; i++) {
     if (relays[i] == -1) break;
+  }
+  if (i == NUM_RELAYS) {
+    // ERROR, NO OPEN INPUT FOUND.
+    return;
   }
   relays[i] = now() + seconds;
   const int pin = RELAY_PIN_START + i;
