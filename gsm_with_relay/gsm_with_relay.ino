@@ -68,9 +68,11 @@ void clearBufferArray() {
 }
 
 void parseBuffer() {
-  Serial.println("Called parseBuffer");
-  Serial.write(buffer, count);
+  /*Serial.println("Called parseBuffer");*/
+  /*Serial.write(buffer, count);*/
   String response(buffer);
+  Serial.println(response);
+  delay(100);
   // Ignore responses that do not contain text messages.
   if (!response.startsWith("+CMT")) return;
   Serial.println("response is a CMT command.");
@@ -78,7 +80,7 @@ void parseBuffer() {
   String sender = getResponseSender(response);
   String message = getResponseMessage(response);
   Serial.println("sender: " + sender);
-  Serial.println("message: " + message);
+  Serial.println("message: '" + message + "'");
   if (sender == PARSE_ERROR || message == PARSE_ERROR) {
     Serial.println("ERROR: could not parse response.");
     return;
@@ -101,6 +103,7 @@ void parseBuffer() {
   }
   Serial.println("Exiting parseBuffer");
 }
+
 
 /*******************************************************************
  * Relay Functions */
@@ -128,6 +131,7 @@ void powerPhoneOff() {
     }
   }
 }
+
 
 /*******************************************************************
  * SMS Functions */
@@ -174,9 +178,9 @@ void printPhoneNumber() {
 String getResponseMessage(String response) {
   int newlinePos = response.indexOf('\n');
   if (newlinePos == -1) return PARSE_ERROR;
-  String message = response.substring(newlinePos + 1);
-  Serial.println(message);
-  return message;
+  int finalNewlinePos = response.indexOf('\n', newlinePos+1);
+  if (finalNewlinePos == -1) return response.substring(newlinePos + 1);
+  return response.substring(newlinePos+1, finalNewlinePos);
 }
 
 
@@ -184,8 +188,12 @@ String getResponseMessage(String response) {
  * Miscellaneous */
 // Returns NULL if input contains a non-digit character.
 int stringToInt(String input) {
-  for (int i = 0; i < input.length(); i++) {
-    if (!isDigit(input.charAt(i))) return NULL;
-  }
+  // XXX(rgardner): the following loop breaks the parsing of the message. This
+  //   should just check that every character is in fact a digit before
+  //   parsing it as an integer. However, there is a digit that is not a
+  //   number even when all newlines have been removed.
+  /*for (int i = 0; i < input.length(); i++) {*/
+    /*if (!isDigit(input.charAt(i))) return NULL;*/
+  /*}*/
   return input.toInt();
 }
