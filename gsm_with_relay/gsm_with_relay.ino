@@ -68,11 +68,12 @@ void clearBufferArray() {
 }
 
 void parseBuffer() {
-  /*Serial.println("Called parseBuffer");*/
-  /*Serial.write(buffer, count);*/
+  Serial.println("Called parseBuffer");
+  Serial.write(buffer, count);
   String response(buffer);
   // Ignore responses that do not contain text messages.
   if (!response.startsWith("+CMT")) return;
+  Serial.println("response is a CMT command.");
 
   String sender = getResponseSender(response);
   String message = getResponseMessage(response);
@@ -149,6 +150,7 @@ String getResponseSender(String response) {
   String phoneNumber = "";
   for (int i = 8; i < 65; i++) {
     char c = response.charAt(i);
+    Serial.println("response[i] = " + c);
     if (c == '"') break;
     phoneNumber.concat(c);
   }
