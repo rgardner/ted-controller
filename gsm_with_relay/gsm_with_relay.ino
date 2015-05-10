@@ -37,9 +37,9 @@ void setup()
     relays[i] = -1;
     const int pin = RELAY_PIN_START + i;
     pinMode(pin, OUTPUT);
-    digitalWrite(pin, HIGH);   
+    digitalWrite(pin, HIGH);
   }
-  
+
   // Start the power sensing pins.
   pinMode(currentPin1, INPUT);
   Serial.println("Ready...");
