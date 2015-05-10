@@ -2,7 +2,7 @@
  *
  * Toggle the load on the corresponding relay pin.
  */
-int relayPin1 = 2;  // IN1 connected to corresponding pin on arduino
+int relayPin1 = 52;  // IN1 connected to corresponding pin on arduino
 
 void setup() {
   pinMode(relayPin1, OUTPUT);     // sets the digital pin as output
