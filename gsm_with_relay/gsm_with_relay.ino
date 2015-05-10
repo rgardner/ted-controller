@@ -5,15 +5,12 @@
 
 /*******************************************************************
  * Power Sensing */
-const int currentPin1 = 8;  // analog pin
-
-/*******************************************************************
- * SMS */
-String PARSE_ERROR = "";
-SoftwareSerial gprsSerial(10, 11);
-
-char buffer[64];  // buffer array for data receive over serial port
-int count = 0;  // counter for buffer array
+const int NUM_SAMPLES = 1000;  // number of analog read samples
+const int SAMPLE_RATE = 1;     // number of seconds in between samples
+const int currentPin1 = 8;     // analog pin
+int currentData1[NUM_SAMPLES];
+int currentDataCount = 0;
+int nextSampleTime = 0;  // stores the time the last sample was taken
 
 /*******************************************************************
  * Relays */
@@ -21,6 +18,14 @@ const int NO_AVAILABLE_RELAYS = -1;
 const int NUM_RELAYS = 1;
 int relays[NUM_RELAYS];
 const int RELAY_PIN_START = 22;
+
+/*******************************************************************
+ * SMS */
+String PARSE_ERROR = "";
+SoftwareSerial gprsSerial(10, 11);
+char buffer[64];  // buffer array for data receive over serial port
+int count = 0;    // counter for buffer array
+
 
 void setup()
 {
@@ -58,6 +63,13 @@ void loop() {
     clearBufferArray();
     count = 0;
   }
+
+  if (now() > nextSampleTime) {
+    currentData1[currentDataCount++] = analogRead(currentPin1);
+    nextSampleTime += SAMPLE_RATE;
+    if (currentDataCount >= NUM_SAMPLES) currentDataCount = 0;
+  }
+
   powerPhoneOff();
 }
 
@@ -74,7 +86,7 @@ void parseBuffer() {
   Serial.println(response);
   delay(100);
   // Ignore responses that do not contain text messages.
-  if (!response.startsWith("+CMT")) return;
+  if (response.indexOf("CMT") == -1) return;
   Serial.println("response is a CMT command.");
 
   String sender = getResponseSender(response);
@@ -106,6 +118,15 @@ void parseBuffer() {
 
 
 /*******************************************************************
+ * Power Sensing */
+void printPowerData() {
+  Serial.println(currentDataCount);
+  for (int i = 0; i < currentDataCount; i++) {
+    Serial.println(currentData1[i]);
+  }
+}
+
+/*******************************************************************
  * Relay Functions */
 int startPoweringPhone(int seconds) {
   int i = 0;
@@ -128,6 +149,7 @@ void powerPhoneOff() {
       Serial.println("Powering off pin: " + String(pin));
       digitalWrite(pin, HIGH);
       relays[i] = -1;
+      printPowerData();
     }
   }
 }
@@ -152,13 +174,11 @@ boolean sendTextMessage(String message, String toPhoneNumber) {
 // parse.
 String getResponseSender(String response) {
   String phoneNumber = "";
-  for (int i = 8; i < 65; i++) {
-    char c = response.charAt(i);
-    Serial.println("response[i] = " + c);
-    if (c == '"') break;
-    phoneNumber.concat(c);
-  }
-  return phoneNumber;
+  int startPhoneNumber = response.indexOf("\"");
+  if (startPhoneNumber == -1) return PARSE_ERROR;
+  int endPhoneNumber = response.indexOf("\"", startPhoneNumber + 1);
+  if (endPhoneNumber == -1) return PARSE_ERROR;
+  return response.substring(startPhoneNumber + 1, endPhoneNumber);
 }
 
 // TODO: remove after getResponseSender is functional.
