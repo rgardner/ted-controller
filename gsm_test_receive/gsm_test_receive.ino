@@ -3,7 +3,7 @@
 
 SoftwareSerial gprsSerial(10, 11);
 
-unsigned char buffer[64];  // buffer array for data receive over serial port
+char buffer[64];  // buffer array for data receive over serial port
 int count = 0;  // counter for buffer array
 
 void setup()
@@ -28,6 +28,7 @@ void loop() {
       if (count == 64) break;
     }
     Serial.write(buffer, count);
+    printPhoneNumber();
     clearBufferArray();
     count = 0;
   }
@@ -37,4 +38,25 @@ void clearBufferArray() {
   for (int i=0; i<count;i++) {
     buffer[i] = NULL;
   }
+}
+
+void printPhoneNumber() {
+  /*Serial.write(buffer, count);*/
+  /*Serial.println("Called printPhoneNumber");*/
+  String message(buffer);
+  /*Serial.println(message.substring(20));*/
+  if (!message.startsWith("+CMT")) return;
+  Serial.println("Entering function...");
+
+  String phoneNumber = "";
+  int i = 8;
+  while (true) {
+    /*Serial.println(buffer[i]);*/
+    if (i == 64) break;
+    if (buffer[i] == '"') break;
+    phoneNumber.concat(buffer[i]);
+    i++;
+  }
+  Serial.println(phoneNumber);
+  Serial.println("Exiting function...");
 }
