@@ -9,6 +9,7 @@ const int currentPin1 = 8;  // analog pin
 
 /*******************************************************************
  * SMS */
+String PARSE_ERROR = "";
 SoftwareSerial gprsSerial(10, 11);
 
 char buffer[64];  // buffer array for data receive over serial port
@@ -73,13 +74,29 @@ void parseBuffer() {
   // Ignore responses that do not contain text messages.
   if (!response.startsWith("+CMT")) return;
 
+  String sender = getResponseSender(response);
   String message = getResponseMessage(response);
+  Serial.println("sender: " + sender);
+  Serial.println("message: " + message);
+  if (sender == PARSE_ERROR || message == PARSE_ERROR) {
+    Serial.println("ERROR: could not parse response.");
+    return;
+  }
+
   int seconds = stringToInt(message);
   Serial.println("seconds: " + String(seconds));
-  if (seconds == NULL) return;
+  if (seconds == NULL) {
+    char errorMessage[] = "Cannot parse your message. Please respond with " \
+                          "the time in seconds you'd like to charge your " \
+                          "phone. e.g. '10', '30', '60', etc.";
+    sendTextMessage(errorMessage, sender);
+    return;
+  }
   int error = startPoweringPhone(seconds);
   if (error == NO_AVAILABLE_RELAYS) {
-    // Alert the user that there are no available relays.
+    char errorMessage[] = "No available relays found. Please try again later.";
+    sendTextMessage(errorMessage, sender);
+    return;
   }
   Serial.println("Exiting parseBuffer");
 }
@@ -109,14 +126,24 @@ void printPhoneNumber() {
   Serial.println(phoneNumber);
 }
 
-// Returns "" (empty string) if the message cannot be parsed (no newline
-//   found).
+// Returns PARSE_ERROR if the message cannot be parsed (no newline found).
 String getResponseMessage(String response) {
   int newlinePos = response.indexOf('\n');
-  if (newlinePos == -1) return "";
+  if (newlinePos == -1) return PARSE_ERROR;
   String message = response.substring(newlinePos + 1);
   Serial.println(message);
   return message;
+}
+
+// Returns the sender's phone number
+String getResponseSender(String response) {
+  String phoneNumber = "";
+  for (int i = 8; i < 65; i++) {
+    char c = response.charAt(i);
+    if (c == '"') break;
+    phoneNumber.concat(c);
+  }
+  return phoneNumber;
 }
 
 // Returns NULL if input contains a non-digit character.
@@ -137,4 +164,19 @@ void powerPhoneOff() {
       relays[i] = -1;
     }
   }
+}
+
+/*******************************************************************
+ * SMS Functions */
+// Send 'message' to 'toPhoneNumber'
+boolean sendTextMessage(String message, String toPhoneNumber) {
+  Serial.println("Sending Text...");
+  gprsSerial.println("AT+CMGS = \"" + toPhoneNumber + "\"");
+  delay(100);
+  gprsSerial.println(message); //the content of the message
+  delay(100);
+  gprsSerial.print((char)26);//the ASCII code of the ctrl+z is 26 (required according to the datasheet)
+  delay(100);
+  gprsSerial.println();
+  Serial.println("Text Sent.");
 }
