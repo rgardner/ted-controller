@@ -16,6 +16,7 @@ int count = 0;  // counter for buffer array
 
 /*******************************************************************
  * Relays */
+const int NO_AVAILABLE_RELAYS = -1;
 const int NUM_RELAYS = 1;
 int relays[NUM_RELAYS];
 const int RELAY_PIN_START = 22;
@@ -76,23 +77,24 @@ void parseBuffer() {
   int seconds = stringToInt(message);
   Serial.println("seconds: " + String(seconds));
   if (seconds == NULL) return;
-  startPoweringPhone(seconds);
+  int error = startPoweringPhone(seconds);
+  if (error == NO_AVAILABLE_RELAYS) {
+    // Alert the user that there are no available relays.
+  }
   Serial.println("Exiting parseBuffer");
 }
 
-void startPoweringPhone(int seconds) {
+int startPoweringPhone(int seconds) {
   int i = 0;
   for ( ; i < NUM_RELAYS; i++) {
     if (relays[i] == -1) break;
   }
-  if (i == NUM_RELAYS) {
-    // ERROR, NO OPEN INPUT FOUND.
-    return;
-  }
+  if (i == NUM_RELAYS) return NO_AVAILABLE_RELAYS;
   relays[i] = now() + seconds;
   const int pin = RELAY_PIN_START + i;
   digitalWrite(pin, LOW);
   Alarm.timerOnce(seconds, powerPhoneOff);
+  return 0;
 }
 
 void printPhoneNumber() {
