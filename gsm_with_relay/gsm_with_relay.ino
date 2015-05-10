@@ -66,15 +66,18 @@ void clearBufferArray() {
 }
 
 void parseBuffer() {
- // what to do next?
- Serial.write(buffer, count);
- Serial.println("Called parseBuffer");
- printPhoneNumber();
- int seconds = timeForPhoneToCharge();
- Serial.println("seconds: " + String(seconds));
- if (seconds == -1) return;
- startPoweringPhone(seconds);
- Serial.println("Exiting parseBuffer");
+  /*Serial.println("Called parseBuffer");*/
+  /*Serial.write(buffer, count);*/
+  String response(buffer);
+  // Ignore responses that do not contain text messages.
+  if (!response.startsWith("+CMT")) return;
+
+  String message = getResponseMessage(response);
+  int seconds = stringToInt(message);
+  Serial.println("seconds: " + String(seconds));
+  if (seconds == NULL) return;
+  startPoweringPhone(seconds);
+  Serial.println("Exiting parseBuffer");
 }
 
 void startPoweringPhone(int seconds) {
@@ -104,23 +107,22 @@ void printPhoneNumber() {
   Serial.println(phoneNumber);
 }
 
-int timeForPhoneToCharge() {
-  String message(buffer);
-  if (!message.startsWith("+CMT")) return -1;
-  int i;
-  for (i = 0; i < count && buffer[i] != '\n'; i++) {
-    Serial.write(buffer[i]);
-  }
-  if (buffer[i] != '\n') return -1;  // no newline found.
-  if (i == count) return -2;  // end of string.
-  Serial.println(message.substring(i+1));
-  return message.substring(i+1).toInt();
+// Returns "" (empty string) if the message cannot be parsed (no newline
+//   found).
+String getResponseMessage(String response) {
+  int newlinePos = response.indexOf('\n');
+  if (newlinePos == -1) return "";
+  String message = response.substring(newlinePos + 1);
+  Serial.println(message);
+  return message;
 }
 
-void printMessage() {
-  String message(buffer);
-  if (!message.startsWith("+CMT")) return;
-  // Parse message
+// Returns NULL if input contains a non-digit character.
+int stringToInt(String input) {
+  for (int i = 0; i < input.length(); i++) {
+    if (!isDigit(input.charAt(i))) return NULL;
+  }
+  return input.toInt();
 }
 
 void powerPhoneOff() {
