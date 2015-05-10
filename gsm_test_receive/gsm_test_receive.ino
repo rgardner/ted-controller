@@ -12,7 +12,7 @@ void setup()
   Serial.begin(19200);
   delay(100);
   // Read an SMS in index #1
-  gprsSerial.print("AT+CMFGF=1\r");
+  gprsSerial.print("AT+CMGF=1\r");
   delay(100);
   // Echo the contents of a new SMS upon receipt to serial out on GSM shield.
   gprsSerial.print("AT+CNMI=2,2,0,0,0\r");
