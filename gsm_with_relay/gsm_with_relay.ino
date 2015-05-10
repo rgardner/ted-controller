@@ -101,6 +101,8 @@ void parseBuffer() {
   Serial.println("Exiting parseBuffer");
 }
 
+/*******************************************************************
+ * Relay Functions */
 int startPoweringPhone(int seconds) {
   int i = 0;
   for ( ; i < NUM_RELAYS; i++) {
@@ -112,46 +114,6 @@ int startPoweringPhone(int seconds) {
   digitalWrite(pin, LOW);
   Alarm.timerOnce(seconds, powerPhoneOff);
   return 0;
-}
-
-void printPhoneNumber() {
-  String message(buffer);
-  if (!message.startsWith("+CMT")) return;
-
-  String phoneNumber = "";
-  for (int i = 8; i < 65; i++) {
-    if (buffer[i] == '"') break;
-    phoneNumber.concat(buffer[i]);
-  }
-  Serial.println(phoneNumber);
-}
-
-// Returns PARSE_ERROR if the message cannot be parsed (no newline found).
-String getResponseMessage(String response) {
-  int newlinePos = response.indexOf('\n');
-  if (newlinePos == -1) return PARSE_ERROR;
-  String message = response.substring(newlinePos + 1);
-  Serial.println(message);
-  return message;
-}
-
-// Returns the sender's phone number
-String getResponseSender(String response) {
-  String phoneNumber = "";
-  for (int i = 8; i < 65; i++) {
-    char c = response.charAt(i);
-    if (c == '"') break;
-    phoneNumber.concat(c);
-  }
-  return phoneNumber;
-}
-
-// Returns NULL if input contains a non-digit character.
-int stringToInt(String input) {
-  for (int i = 0; i < input.length(); i++) {
-    if (!isDigit(input.charAt(i))) return NULL;
-  }
-  return input.toInt();
 }
 
 void powerPhoneOff() {
@@ -179,4 +141,49 @@ boolean sendTextMessage(String message, String toPhoneNumber) {
   delay(100);
   gprsSerial.println();
   Serial.println("Text Sent.");
+}
+
+// Returns the sender's phone number. Return empty string ("") if unable to
+// parse.
+String getResponseSender(String response) {
+  String phoneNumber = "";
+  for (int i = 8; i < 65; i++) {
+    char c = response.charAt(i);
+    if (c == '"') break;
+    phoneNumber.concat(c);
+  }
+  return phoneNumber;
+}
+
+// TODO: remove after getResponseSender is functional.
+void printPhoneNumber() {
+  String message(buffer);
+  if (!message.startsWith("+CMT")) return;
+
+  String phoneNumber = "";
+  for (int i = 8; i < 65; i++) {
+    if (buffer[i] == '"') break;
+    phoneNumber.concat(buffer[i]);
+  }
+  Serial.println(phoneNumber);
+}
+
+// Returns PARSE_ERROR if the message cannot be parsed (no newline found).
+String getResponseMessage(String response) {
+  int newlinePos = response.indexOf('\n');
+  if (newlinePos == -1) return PARSE_ERROR;
+  String message = response.substring(newlinePos + 1);
+  Serial.println(message);
+  return message;
+}
+
+
+/*******************************************************************
+ * Miscellaneous */
+// Returns NULL if input contains a non-digit character.
+int stringToInt(String input) {
+  for (int i = 0; i < input.length(); i++) {
+    if (!isDigit(input.charAt(i))) return NULL;
+  }
+  return input.toInt();
 }
