@@ -1,7 +1,6 @@
 #include <SoftwareSerial.h>
 #include <String.h>
 #include <Time.h>
-#include <TimeAlarms.h>
 
 /*******************************************************************
  * Power Sensing */
@@ -22,10 +21,11 @@ const int RELAY_PIN_START = 22;
 
 /*******************************************************************
  * SMS */
+const int BUFFER_SIZE = 64;  // size of the input buffer
 String PARSE_ERROR = "";
 SoftwareSerial gprsSerial(10, 11);
-char buffer[64];  // buffer array for data receive over serial port
-int count = 0;    // counter for buffer array
+char buffer[BUFFER_SIZE];  // buffer array for data receive over serial port
+int count = 0;  // counter for buffer array
 
 
 void setup() {
@@ -53,11 +53,11 @@ void setup() {
 }
 
 void loop() {
-  //If a character comes in from the cellular module...
+  // If a character comes in from the cellular module...
   if (gprsSerial.available() > 0) {
-    while(gprsSerial.available()) {
-      buffer[count++]=gprsSerial.read();
-      if (count == 64) break;
+    while (gprsSerial.available()) {
+      buffer[count++] = gprsSerial.read();
+      if (count == BUFFER_SIZE) break;
     }
     parseBuffer();
     clearBufferArray();
@@ -74,7 +74,7 @@ void loop() {
 }
 
 void clearBufferArray() {
-  for (int i=0; i<count;i++) {
+  for (int i = 0; i < count; i++) {
     buffer[i] = NULL;
   }
 }
@@ -113,7 +113,6 @@ void parseBuffer() {
     sendTextMessage(errorMessage, sender);
     return;
   }
-  Serial.println("Exiting parseBuffer");
 }
 
 
@@ -134,6 +133,12 @@ double sampleMilliWattHour() {
   return sum / ANALOG_READ_TO_MW_HR;
 }
 
+void clearCurrentData() {
+  for (int i=0; i<count;i++) {
+    currentData1[i] = NULL;
+  }
+}
+
 /*******************************************************************
  * Relay Functions */
 int startPoweringPhone(int seconds) {
@@ -145,7 +150,6 @@ int startPoweringPhone(int seconds) {
   relays[i] = now() + seconds;
   const int pin = RELAY_PIN_START + i;
   digitalWrite(pin, LOW);
-  Alarm.timerOnce(seconds, powerPhoneOff);
   return 0;
 }
 
@@ -153,11 +157,12 @@ void powerPhoneOff() {
   for (int i = 0; i < NUM_RELAYS; i++) {
     if (relays[i] == -1) continue;
     if (now() > relays[i]) {
-      int pin = RELAY_PIN_START + i;
+      const int pin = RELAY_PIN_START + i;
       Serial.println("Powering off pin: " + String(pin));
       digitalWrite(pin, HIGH);
       relays[i] = -1;
       Serial.println("energy: " + String(sampleMilliWattHour()) + "mWh");
+      clearCurrentData();
     }
   }
 }
@@ -166,7 +171,7 @@ void powerPhoneOff() {
 /*******************************************************************
  * SMS Functions */
 // Send 'message' to 'toPhoneNumber'
-boolean sendTextMessage(String message, String toPhoneNumber) {
+void sendTextMessage(String message, String toPhoneNumber) {
   Serial.println("Sending Text...");
   gprsSerial.println("AT+CMGS = \"" + toPhoneNumber + "\"");
   delay(100);
@@ -189,26 +194,13 @@ String getResponseSender(String response) {
   return response.substring(startPhoneNumber + 1, endPhoneNumber);
 }
 
-// TODO: remove after getResponseSender is functional.
-void printPhoneNumber() {
-  String message(buffer);
-  if (!message.startsWith("+CMT")) return;
-
-  String phoneNumber = "";
-  for (int i = 8; i < 65; i++) {
-    if (buffer[i] == '"') break;
-    phoneNumber.concat(buffer[i]);
-  }
-  Serial.println(phoneNumber);
-}
-
 // Returns PARSE_ERROR if the message cannot be parsed (no newline found).
 String getResponseMessage(String response) {
   int newlinePos = response.indexOf('\n');
   if (newlinePos == -1) return PARSE_ERROR;
-  int finalNewlinePos = response.indexOf('\n', newlinePos+1);
+  int finalNewlinePos = response.indexOf('\n', newlinePos + 1);
   if (finalNewlinePos == -1) return response.substring(newlinePos + 1);
-  return response.substring(newlinePos+1, finalNewlinePos);
+  return response.substring(newlinePos +1, finalNewlinePos);
 }
 
 
