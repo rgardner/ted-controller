@@ -5,6 +5,7 @@
 
 /*******************************************************************
  * Power Sensing */
+const double ANALOG_READ_TO_MW_HR = 3.6 * 204.6 / 5;
 const int NUM_SAMPLES = 1000;  // number of analog read samples
 const int SAMPLE_RATE = 1;     // number of seconds in between samples
 const int currentPin1 = 8;     // analog pin
@@ -27,8 +28,7 @@ char buffer[64];  // buffer array for data receive over serial port
 int count = 0;    // counter for buffer array
 
 
-void setup()
-{
+void setup() {
   gprsSerial.begin(19200); // GPRS shield baud rate
   Serial.begin(19200);
   delay(100);
@@ -119,11 +119,19 @@ void parseBuffer() {
 
 /*******************************************************************
  * Power Sensing */
-void printPowerData() {
-  Serial.println(currentDataCount);
+void printCurrentData() {
+  Serial.println("num current samples: " + String(currentDataCount));
   for (int i = 0; i < currentDataCount; i++) {
     Serial.println(currentData1[i]);
   }
+}
+
+double sampleMilliWattHour() {
+  double sum = 0.0;
+  for (int i = 0; i < currentDataCount; i++) {
+    sum += currentData1[i];
+  }
+  return sum / ANALOG_READ_TO_MW_HR;
 }
 
 /*******************************************************************
@@ -149,7 +157,7 @@ void powerPhoneOff() {
       Serial.println("Powering off pin: " + String(pin));
       digitalWrite(pin, HIGH);
       relays[i] = -1;
-      printPowerData();
+      Serial.println("energy: " + String(sampleMilliWattHour()) + "mWh");
     }
   }
 }
