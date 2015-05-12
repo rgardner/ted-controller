@@ -49,15 +49,23 @@ void setup() {
 
   // Start the power sensing pins.
   pinMode(currentPin1, INPUT);
+
+  // Debug
+  pinMode(12, OUTPUT);
   Serial.println("Ready...");
 }
 
 void loop() {
   // If a character comes in from the cellular module...
   if (gprsSerial.available() > 0) {
-    while (gprsSerial.available()) {
-      buffer[count++] = gprsSerial.read();
-      if (count == BUFFER_SIZE) break;
+    tone(12, 110, 1000);
+    while (true) {
+      while (gprsSerial.available()) {
+        buffer[count++] = gprsSerial.read();
+        if (count == BUFFER_SIZE) break;
+      }
+      delay(100);
+      if (!gprsSerial.available()) break;
     }
     parseBuffer();
     clearBufferArray();
@@ -66,6 +74,7 @@ void loop() {
 
   if (now() > nextSampleTime) {
     currentData1[currentDataCount++] = analogRead(currentPin1);
+    Serial.println(currentData1[currentDataCount-1]);
     nextSampleTime += SAMPLE_RATE;
     if (currentDataCount >= NUM_SAMPLES) currentDataCount = 0;
   }
@@ -83,11 +92,14 @@ void parseBuffer() {
   /*Serial.println("Called parseBuffer");*/
   /*Serial.write(buffer, count);*/
   String response(buffer);
+  response.trim();
   Serial.println(response);
   delay(100);
   // Ignore responses that do not contain text messages.
+  tone(12, 220, 1000);
   if (response.indexOf("CMT") == -1) return;
   Serial.println("response is a CMT command.");
+  tone(12, 330, 1000);
 
   String sender = getResponseSender(response);
   String message = getResponseMessage(response);
@@ -95,9 +107,11 @@ void parseBuffer() {
   Serial.println("message: '" + message + "'");
   if (sender == PARSE_ERROR || message == PARSE_ERROR) {
     Serial.println("ERROR: could not parse response.");
+    tone(12, 404, 1000);
     return;
   }
 
+  tone(12, 550, 1000);
   int seconds = stringToInt(message);
   Serial.println("seconds: " + String(seconds));
   if (seconds == NULL) {
@@ -138,6 +152,7 @@ void clearCurrentData() {
     currentData1[i] = NULL;
   }
 }
+
 
 /*******************************************************************
  * Relay Functions */
