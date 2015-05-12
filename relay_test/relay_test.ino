@@ -2,23 +2,26 @@
  *
  * Toggle the load on the corresponding relay pin.
  */
-int relayPin1 = 22;  // IN1 connected to corresponding pin on arduino
+const int relayPin = 22;
+const int currentSensorPin = 8;
+const int speakerPin = 12;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(relayPin1, OUTPUT);     // sets the digital pin as output
-  digitalWrite(relayPin1, LOW);  // Prevents relays from starting up engaged
-  pinMode(12, OUTPUT);
+  pinMode(relayPin, OUTPUT);    // sets the digital pin as output
+  digitalWrite(relayPin, LOW);  // Prevents relays from starting up engaged
+  pinMode(currentSensorPin, INPUT);  // initialize current sensor
+  pinMode(speakerPin, OUTPUT);  // activate speaker for debugging
 }
 
 void loop() {
-  int data = analogRead(8);
-  Serial.println(data);
+  Serial.println(analogRead(currentSensorPin));
   delay(1000);
-  // digitalWrite(relayPin1, LOW);   // energizes the relay and lights the LED
-  // tone(12, 440, 1000);
-  // delay(5000);                    // waits for a second
-  
-  // digitalWrite(relayPin1, HIGH);  // de-energizes the relay and LED is off
-  // delay(1000);                    // waits for a second
+
+  // digitalWrite(relayPin, LOW);  // energizes the relay and lights the LED
+  // tone(speakerPin, 440, 1000);
+  // delay(5000);
+
+  // digitalWrite(relayPin, HIGH);  // de-energizes the relay and LED is off
+  // delay(1000);
 }
